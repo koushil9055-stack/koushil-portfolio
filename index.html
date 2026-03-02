@@ -1,0 +1,541 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { motion } from 'motion/react';
+import { Menu, X, Phone, Mail, ChevronRight, Hexagon, Square, Circle } from 'lucide-react';
+
+const Background = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let w = canvas.width = window.innerWidth;
+    let h = canvas.height = window.innerHeight;
+    
+    const particles: any[] = [];
+    const particleCount = 70;
+
+    for (let i = 0; i < particleCount; i++) {
+      particles.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        size: Math.random() * 1.5 + 0.5,
+      });
+    }
+
+    let animationFrameId: number;
+
+    const render = () => {
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = 'rgba(184, 115, 51, 0.6)';
+      ctx.strokeStyle = 'rgba(184, 115, 51, 0.15)';
+
+      particles.forEach((p, i) => {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0 || p.x > w) p.vx *= -1;
+        if (p.y < 0 || p.y > h) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        for (let j = i + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dx = p.x - p2.x;
+          const dy = p.y - p2.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 120) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.globalAlpha = 1 - dist / 120;
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+          }
+        }
+      });
+
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    const handleResize = () => {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none opacity-30" />;
+};
+
+const Navbar = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollTo = (id: string) => {
+    setIsOpen(false);
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const navItems = ['About Me', 'Skills', 'Projects', 'Contact'];
+
+  return (
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-black/80 backdrop-blur-md border-b border-[#b87333]/20 py-4' : 'bg-transparent py-6'}`}>
+      <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="text-2xl font-bold text-[#b87333] tracking-tighter cursor-pointer"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        >
+          K.
+        </motion.div>
+
+        <div className="hidden md:flex gap-8">
+          {navItems.map((item, i) => (
+            <motion.button
+              key={item}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              whileHover={{ scale: 1.05, color: '#b87333' }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => scrollTo(item.toLowerCase().replace(' ', '-'))}
+              className="text-sm tracking-widest uppercase text-zinc-400 hover:text-[#b87333] transition-colors relative group"
+            >
+              {item}
+              <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-[#b87333] transition-all duration-300 group-hover:w-full" />
+            </motion.button>
+          ))}
+        </div>
+
+        <button className="md:hidden text-zinc-400 hover:text-[#b87333]" onClick={() => setIsOpen(!isOpen)}>
+          {isOpen ? <X /> : <Menu />}
+        </button>
+      </div>
+
+      {isOpen && (
+        <motion.div 
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="md:hidden bg-black border-b border-[#b87333]/20 px-6 py-4 flex flex-col gap-4"
+        >
+          {navItems.map((item) => (
+            <motion.button
+              key={item}
+              whileTap={{ scale: 0.95, color: '#b87333' }}
+              onClick={() => scrollTo(item.toLowerCase().replace(' ', '-'))}
+              className="text-left text-sm tracking-widest uppercase text-zinc-400 hover:text-[#b87333] py-2"
+            >
+              {item}
+            </motion.button>
+          ))}
+        </motion.div>
+      )}
+    </nav>
+  );
+};
+
+const Hero = () => {
+  return (
+    <section className="min-h-screen flex items-center justify-center relative px-6 pt-20">
+      <div className="max-w-7xl mx-auto w-full grid md:grid-cols-2 gap-12 items-center z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-8 h-[1px] bg-[#b87333]" />
+            <span className="text-[#b87333] text-sm tracking-[0.2em] uppercase">Frontend Developer</span>
+          </div>
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 tracking-tight leading-[1.1]">
+            Koushil<span className="text-[#b87333]">.</span>
+          </h1>
+          <p className="text-zinc-400 text-lg md:text-xl max-w-lg mb-10 leading-relaxed">
+            I craft clean, responsive, and interactive web experiences using modern HTML, CSS & JavaScript — focused on performance and pixel-perfect details.
+          </p>
+          <div className="flex flex-wrap gap-4">
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' })}
+              className="bg-[#b87333] text-black px-8 py-4 text-sm tracking-widest uppercase font-semibold flex items-center gap-2 hover:bg-[#d49a6a] transition-colors"
+            >
+              View My Work <ChevronRight size={18} />
+            </motion.button>
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+              className="border border-[#b87333]/50 text-white px-8 py-4 text-sm tracking-widest uppercase font-semibold hover:border-[#b87333] hover:text-[#b87333] transition-colors"
+            >
+              Get in Touch
+            </motion.button>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="relative mx-auto md:ml-auto md:mr-0 w-full max-w-[400px] aspect-[4/5]"
+        >
+          <div className="absolute inset-0 border-2 border-[#b87333]/30 translate-x-4 translate-y-4 rounded-lg" />
+          <div className="absolute inset-0 bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800">
+            <img 
+              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000&auto=format&fit=crop" 
+              alt="Koushil" 
+              className="w-full h-full object-cover opacity-80 mix-blend-luminosity hover:mix-blend-normal transition-all duration-500"
+              referrerPolicy="no-referrer"
+            />
+            <div className="absolute inset-0 bg-gradient-to-tr from-[#b87333]/20 to-transparent mix-blend-overlay" />
+          </div>
+          <div className="absolute -top-2 -left-2 w-12 h-12 border-t-2 border-l-2 border-[#b87333]" />
+        </motion.div>
+      </div>
+      
+      <motion.div 
+        animate={{ y: [0, 10, 0] }}
+        transition={{ repeat: Infinity, duration: 2 }}
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-50"
+      >
+        <span className="text-[10px] tracking-[0.3em] uppercase text-[#b87333]">Scroll</span>
+        <div className="w-[1px] h-12 bg-gradient-to-b from-[#b87333] to-transparent" />
+      </motion.div>
+    </section>
+  );
+};
+
+const About = () => {
+  return (
+    <section id="about-me" className="py-32 px-6 relative z-10 bg-zinc-950/50">
+      <div className="max-w-7xl mx-auto">
+        <motion.div 
+          initial={{ opacity: 0, width: 0 }}
+          whileInView={{ opacity: 1, width: "100px" }}
+          viewport={{ once: true }}
+          className="h-[1px] bg-gradient-to-r from-[#b87333] to-transparent mb-12"
+        />
+        
+        <div className="grid md:grid-cols-2 gap-16 items-center">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="flex items-center gap-4 mb-6">
+              <span className="text-[#b87333] text-xs tracking-[0.2em] uppercase">01 — About</span>
+              <div className="flex-1 h-[1px] bg-[#b87333]/30" />
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight">
+              Turning ideas<br />into interfaces.
+            </h2>
+            <div className="space-y-6 text-zinc-400 leading-relaxed">
+              <p>
+                Hey, I'm <strong className="text-white font-medium">Koushil</strong> — a frontend developer passionate about building web experiences that feel intuitive, look sharp, and run fast.
+              </p>
+              <p>
+                I believe great UI is invisible — it just works. My code is clean, my layouts are deliberate, and my hover states are never an afterthought.
+              </p>
+              <p>
+                Currently focused on deepening my expertise in <strong className="text-white font-medium">vanilla web technologies</strong> — because if you understand the fundamentals, you can build anything.
+              </p>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="bg-zinc-900/50 border border-zinc-800 p-10 relative overflow-hidden group"
+          >
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#b87333] to-transparent" />
+            
+            <div className="space-y-10">
+              <div>
+                <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-br from-[#b87333] to-[#d49a6a] mb-2">20+</div>
+                <div className="text-xs tracking-[0.2em] uppercase text-zinc-500">Projects Built</div>
+              </div>
+              <div>
+                <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-br from-[#b87333] to-[#d49a6a] mb-2">30</div>
+                <div className="text-xs tracking-[0.2em] uppercase text-zinc-500">Core Technologies</div>
+              </div>
+              <div>
+                <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-br from-[#b87333] to-[#d49a6a] mb-2">∞</div>
+                <div className="text-xs tracking-[0.2em] uppercase text-zinc-500">Lines of curiosity</div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const Skills = () => {
+  const skills = [
+    {
+      name: 'HTML',
+      icon: <Hexagon size={32} className="text-[#b87333]" />,
+      desc: 'Semantic markup, accessibility best practices, clean document structure that works for humans and machines alike.',
+      pct: 90
+    },
+    {
+      name: 'CSS',
+      icon: <Square size={32} className="text-[#b87333]" />,
+      desc: 'Flexbox, Grid, custom properties, animations, responsive design — making things look exactly right on every screen.',
+      pct: 85
+    },
+    {
+      name: 'JavaScript',
+      icon: <Circle size={32} className="text-[#b87333]" />,
+      desc: 'DOM manipulation, event handling, async logic, and UI interactivity — without a framework in sight.',
+      pct: 78
+    }
+  ];
+
+  return (
+    <section id="skills" className="py-32 px-6 relative z-10">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center gap-4 mb-6">
+          <span className="text-[#b87333] text-xs tracking-[0.2em] uppercase">02 — Skills</span>
+          <div className="w-20 h-[1px] bg-[#b87333]/30" />
+        </div>
+        <h2 className="text-4xl md:text-5xl font-bold text-white mb-16 tracking-tight">
+          What I work with.
+        </h2>
+
+        <div className="grid md:grid-cols-3 gap-8">
+          {skills.map((skill, i) => (
+            <motion.div
+              key={skill.name}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+              whileHover={{ y: -10 }}
+              className="bg-zinc-900/40 border border-zinc-800 p-8 relative group hover:border-[#b87333]/50 transition-colors"
+            >
+              <div className="mb-6 transform group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-300 origin-bottom-left">
+                {skill.icon}
+              </div>
+              <h3 className="text-xl font-bold text-white mb-4">{skill.name}</h3>
+              <p className="text-zinc-400 text-sm leading-relaxed mb-8">
+                {skill.desc}
+              </p>
+              
+              <div className="w-full h-[2px] bg-zinc-800 rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  whileInView={{ width: `${skill.pct}%` }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 1, delay: 0.5 + i * 0.1 }}
+                  className="h-full bg-gradient-to-r from-[#b87333] to-[#d49a6a]"
+                />
+              </div>
+              
+              <div className="absolute bottom-0 right-0 w-0 h-0 border-b-2 border-r-2 border-[#b87333] transition-all duration-300 group-hover:w-6 group-hover:h-6 opacity-0 group-hover:opacity-100" />
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const Projects = () => {
+  const projects = [
+    {
+      num: '01',
+      name: 'Calculator App',
+      desc: 'A fully functional calculator built from scratch with pure JavaScript. Handles operator precedence, decimal inputs, keyboard shortcuts, and edge cases that most beginner calculators miss.',
+      tags: ['HTML', 'CSS', 'JavaScript']
+    },
+    {
+      num: '02',
+      name: 'Weather App',
+      desc: 'A real-time weather application that fetches live data via public API. Shows temperature, humidity, wind speed and conditions with dynamic icons that match the current weather state.',
+      tags: ['HTML', 'CSS', 'JS API']
+    }
+  ];
+
+  return (
+    <section id="projects" className="py-32 px-6 relative z-10 bg-zinc-950/50">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center gap-4 mb-6">
+          <span className="text-[#b87333] text-xs tracking-[0.2em] uppercase">03 — Projects</span>
+          <div className="w-20 h-[1px] bg-[#b87333]/30" />
+        </div>
+        <h2 className="text-4xl md:text-5xl font-bold text-white mb-16 tracking-tight">
+          Things I've built.
+        </h2>
+
+        <div className="grid md:grid-cols-2 gap-8">
+          {projects.map((project, i) => (
+            <motion.div
+              key={project.name}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.2 }}
+              className="bg-zinc-900/40 border border-zinc-800 p-10 relative group hover:border-[#b87333]/50 transition-all duration-300 hover:-translate-y-2 flex flex-col"
+            >
+              <div className="absolute top-8 right-8 w-10 h-10 rounded-full border border-zinc-700 flex items-center justify-center text-zinc-500 group-hover:bg-[#b87333] group-hover:text-black group-hover:border-[#b87333] transition-all duration-300 group-hover:rotate-45 group-hover:scale-110">
+                <ChevronRight size={20} className="-mt-0.5" />
+              </div>
+              
+              <div className="text-6xl font-bold text-zinc-800 mb-6 group-hover:text-[#b87333]/40 transition-colors">
+                {project.num}
+              </div>
+              
+              <h3 className="text-2xl font-bold text-white mb-4">{project.name}</h3>
+              <p className="text-zinc-400 text-sm leading-relaxed mb-8 flex-1">
+                {project.desc}
+              </p>
+              
+              <div className="flex flex-wrap gap-3 mt-auto">
+                {project.tags.map(tag => (
+                  <span key={tag} className="text-[10px] tracking-[0.1em] uppercase text-[#b87333] bg-[#b87333]/10 border border-[#b87333]/20 px-3 py-1 rounded-sm">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const Contact = () => {
+  return (
+    <section id="contact" className="py-32 px-6 relative z-10 overflow-hidden text-center">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] pointer-events-none opacity-20">
+        <motion.div 
+          animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+          transition={{ repeat: Infinity, duration: 4, ease: "easeOut" }}
+          className="absolute inset-0 border border-[#b87333] rounded-full"
+        />
+        <motion.div 
+          animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+          transition={{ repeat: Infinity, duration: 4, ease: "easeOut", delay: 1 }}
+          className="absolute inset-0 border border-[#b87333] rounded-full"
+        />
+        <motion.div 
+          animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+          transition={{ repeat: Infinity, duration: 4, ease: "easeOut", delay: 2 }}
+          className="absolute inset-0 border border-[#b87333] rounded-full"
+        />
+      </div>
+
+      <div className="max-w-2xl mx-auto relative z-10">
+        <div className="flex items-center justify-center gap-4 mb-8">
+          <div className="w-10 h-[1px] bg-[#b87333]/30" />
+          <span className="text-[#b87333] text-xs tracking-[0.2em] uppercase">04 — Contact</span>
+          <div className="w-10 h-[1px] bg-[#b87333]/30" />
+        </div>
+        
+        <motion.h2 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-5xl md:text-7xl font-bold text-white mb-6 tracking-tight"
+        >
+          Let's build<br />something<span className="text-[#b87333]">.</span>
+        </motion.h2>
+        
+        <motion.p 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.1 }}
+          className="text-zinc-400 leading-relaxed mb-12"
+        >
+          Have a project in mind or just want to connect? My inbox is always open. I'll get back to you promptly.
+        </motion.p>
+        
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.2 }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-6"
+        >
+          <a 
+            href="mailto:koushil9033@gmail.com" 
+            className="group relative inline-flex items-center gap-3 px-8 py-4 border border-[#b87333]/50 text-[#b87333] text-sm tracking-widest overflow-hidden transition-colors hover:text-black"
+          >
+            <span className="absolute inset-0 bg-[#b87333] translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out" />
+            <Mail size={18} className="relative z-10" />
+            <span className="relative z-10 font-mono">koushil9033@gmail.com</span>
+          </a>
+          
+          <a 
+            href="tel:739505078" 
+            className="group relative inline-flex items-center gap-3 px-8 py-4 border border-[#b87333]/50 text-[#b87333] text-sm tracking-widest overflow-hidden transition-colors hover:text-black"
+          >
+            <span className="absolute inset-0 bg-[#b87333] translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-out" />
+            <Phone size={18} className="relative z-10" />
+            <span className="relative z-10 font-mono">739505078</span>
+          </a>
+        </motion.div>
+      </div>
+    </section>
+  );
+};
+
+const Footer = () => {
+  return (
+    <footer className="border-t border-zinc-900 py-8 px-6 relative z-10">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] tracking-[0.1em] uppercase text-zinc-500">
+        <span>© {new Date().getFullYear()} Koushil</span>
+        <span>Designed & built with <span className="text-[#b87333]">♥</span></span>
+        <span>Frontend Developer</span>
+      </div>
+    </footer>
+  );
+};
+
+export default function App() {
+  return (
+    <div className="bg-black min-h-screen text-zinc-200 font-sans selection:bg-[#b87333]/30 selection:text-white overflow-x-hidden">
+      <Background />
+      <Navbar />
+      <main>
+        <Hero />
+        <About />
+        <Skills />
+        <Projects />
+        <Contact />
+      </main>
+      <Footer />
+    </div>
+  );
+}
